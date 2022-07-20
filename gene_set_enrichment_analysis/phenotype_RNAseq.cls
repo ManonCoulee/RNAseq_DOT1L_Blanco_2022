@@ -1,3 +1,0 @@
-4 2 1
-# CTL KO
-CTL	KO	CTL	KO
