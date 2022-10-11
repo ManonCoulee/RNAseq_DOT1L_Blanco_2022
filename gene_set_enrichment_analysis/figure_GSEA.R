@@ -31,7 +31,8 @@ list_data = lapply(list_files,function(x){
 ##                                                 PLOT
 ####################################################################################################
 
-color_table = c("black" = "grey","blue" = "#3498db","green" = "#58d68d","yellow" = "#e74c3c","orange" = "#ffb74d","purple" = "#9b59b6", "grey" =  "#f8bbd0", "white" = "#000000")
+color_table = c("black" = "grey","blue" = "#3498db","green" = "#58d68d","yellow" = "#e74c3c",
+  "orange" = "#ffb74d","purple" = "#9b59b6", "grey" =  "#f8bbd0", "white" = "#000000")
 
 lapply(samples,function(sample) {
   print(sample)
@@ -88,14 +89,14 @@ lapply(samples,function(sample) {
 })
 
  code_name = c("pathways related to transcription and RNA regulation",
-   "pathways related to mitochondria activity",
-   "pathways related to translation regulation",
-   "pathways related to chromatin organization, chromosome",
-   "pathways related to cillium, flagellum motor activity",
-   "pathways related to cell cycle",
-   "pathways related to apoptosis")
-color_code = c("#3498db","#58d68d","#e74c3c","#ffb74d","#9b59b6","#f8bbd0","#000000")
-
+  "pathways related to mitochondria activity",
+  "pathways related to translation regulation",
+  "pathways related to chromatin organization, chromosome",
+  "pathways related to cillium, flagellum motor activity",
+  "pathways related to cell cycle",
+  "pathways related to apoptosis",
+  "other")
+color_code = c("#3498db","#58d68d","#e74c3c","#ffb74d","#9b59b6","#f8bbd0","#000000","grey")
 
 df = data.frame(color_code, code_name,expression = 1)
 
