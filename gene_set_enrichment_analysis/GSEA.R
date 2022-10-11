@@ -13,7 +13,6 @@ invisible(lapply(rlibs, function(x) suppressMessages(library(x, character.only =
 ####################################################################################################
 
 dirs = list.dirs(".",full.names = TRUE,recursive = FALSE)
-# dir = list.dirs("~/Documents/Mouse/RNAseq/GSEA_Analysis",full.names = TRUE, recursive = FALSE)
 
 wd = '.'
 hallmark = FALSE
