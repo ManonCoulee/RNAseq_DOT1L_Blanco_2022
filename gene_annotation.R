@@ -57,7 +57,7 @@ genecounts = list(
     colData = SamplePlan, design = ~1)))[expressed_genes, ]
 )
 
-write.table(genecounts$raw,"genecounts_SC_SCII_RS_raw",row.names = T, col.names = T, quote = F,
+write.table(genecounts$raw,"genecounts_filtered_raw",row.names = T, col.names = T, quote = F,
   sep = "\t")
 
 ## Load gene annotations (from Genecode transcripts.fa)
