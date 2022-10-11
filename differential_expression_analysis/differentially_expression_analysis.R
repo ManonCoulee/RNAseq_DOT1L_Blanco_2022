@@ -47,15 +47,7 @@ min_expression = 1
 xx = cpm(y = x, normalized.lib.sizes = T, log = F)
 expressed_genes = rowSums(xx > min_expression) >= min_sample ## Filter-out low expressed genes
 
-genecounts = list(
-  ## Raw read counts (as estimated by STAR)
-  raw = x[expressed_genes, ],
-  ## For expression data visualization
-  cpm = cpm(y = x[expressed_genes, ], lib.size = colSums(x), normalized.lib.sizes = T, log = F),
-  ## For performing PCA analysis
-  rlog = assay(rlog(DESeqDataSetFromMatrix(countData = x,
-    colData = SamplePlan, design = ~1)))[expressed_genes, ]
-)
+genecounts = read.table("genecounts_filtered_raw.tsv", sep = "\t", h = T, stringsAsFactors = F)
 
 ####################################################################################################
 ##                                              DE ANALYSIS
@@ -70,7 +62,7 @@ design = model.matrix(~phenotype+cell+phenotype:cell)
 colnames(design) = c("all","KOvsCTL.RS","CTL.SC","CTL.SCII","KOvsCTL.SC","KOvsCTL.SCII")
 
 ## Creating DGEList object
-y = DGEList(counts = genecounts$raw)
+y = DGEList(counts = genecounts)
 ## Calculating TMM-based scaling factors
 y = calcNormFactors(object = y)
 ## Estimating data dispersion
