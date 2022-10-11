@@ -22,13 +22,13 @@ rout = wd
 LFC = log2(1.5)
 
 CT = list.dirs(sample_dir, full.names = F, recursive = F)
-nk = 8
 
 ## Load SamplePlan data descriptor
 SamplePlan = read.table(paste0(wd,"/SamplePlan.tsv"),sep = "\t", h = T, row.names = 1)
 SamplePlan$SampleType = factor(SamplePlan$SampleType)
 SamplePlan$CellType = factor(SamplePlan$CellType,levels = CT)
 SamplePlan$SamplePool = factor(SamplePlan$SamplePool)
+SamplePlan$CellTypeRed = factor(SamplePlan$CellTypeRed)
 
 ####################################################################################################
 ##                                                  ANNOTATION
@@ -62,9 +62,12 @@ genecounts = list(
 ####################################################################################################
 
 ## Perform differential gene expression analysis
-SampleGroup = factor(with(SamplePlan, paste(SampleType, CellType, sep = '.')))
-design = model.matrix(~0 + SampleGroup)
-colnames(design) = levels(SampleGroup)
+cell = SamplePlan$CellType
+phenotype = relevel(SamplePlan$SampleType, ref = "CTL")
+		 
+## Create a model with all multifactor combinations
+design = model.matrix(~phenotype+cell+phenotype:cell)
+colnames(design) = c("all","KOvsCTL.RS","CTL.SC","CTL.SCII","KOvsCTL.SC","KOvsCTL.SCII")
 
 ## Creating DGEList object
 y = DGEList(counts = genecounts$raw)
@@ -97,35 +100,32 @@ p = ggplot(data = data.frame(x = o$x, y = o$y), aes(x = x, y = y, shape = Sample
     axis.text = element_text(size = 25),
     panel.border = element_rect(colour = 'grey50', fill = NA)
 )
-# ggsave(file.path(rout, 'MDS.pdf'), plot = p, width = 12, height = 8)
 ggsave(file.path(rout, 'MDS.png'), plot = p, width = 12, height = 8, device = 'png', dpi = 300)
 
+		 
+## DEG analysis with glm model
 fit = glmQLFit(y = y, design = design, robust = T)
+		 		 
 cmp = makeContrasts(
-  'DOT1L KO effect wichever the CellType' = (KO.SC - CTL.SC) + (KO.SCII - CTL.SCII) +
-			(KO.RS - CTL.RS),
-  'DOT1L KO effect within RS cells' = KO.RS - CTL.RS,
-  'DOT1L KO effect within SC cells' = KO.SC - CTL.SC,
-	'DOT1L KO effect within SCII cells' = KO.SCII - CTL.SCII,
+  'DOT1L KO effect within RS cells' = KOvsCTL.RS,
+  'DOT1L KO effect within SC cells' = KOvsCTL.RS + KOvsCTL.SC,
+  'DOT1L KO effect within SCII cells' = KOvsCTL.RS + KOvsCTL.SCII,
   levels = design
 )
+		 
 thresholds = data.frame(
-  FC = rep(1.5,4),
-  P = rep(.05,4),
+  FC = rep(1.5,3),
+  P = rep(.05,3),
   row.names = colnames(cmp)
 )
-VDN = c("ANY",CT)
-names(VDN) = colnames(cmp)
-tca_index = 4
 
 DEG = sapply(colnames(cmp), function(contrast){
-  # qlf = glmQLFTest(glmfit = fit, contrast = cmp[, contrast])
   FC = log2(thresholds[contrast,'FC'])
   qlf = glmTreat(glmfit = fit, contrast = cmp[, contrast], lfc = LFC)
   tt = with(topTags(object = qlf, n = NULL, sort.by = 'none'), table)
   tt$gl = 0
   tt$gl[tt$PValue <= thresholds[contrast, 'P']  & tt$logFC < -FC] = 1
-	tt$gl[tt$PValue <= thresholds[contrast, 'P']  & tt$logFC > FC] = 2
+  tt$gl[tt$PValue <= thresholds[contrast, 'P']  & tt$logFC > FC] = 2
   tt$gl = factor(tt$gl, levels = c(1, 0, 2), labels = c('Down-regulated', 'Not regulated',
     'Up-regulated'))
   tt
@@ -140,31 +140,6 @@ invisible(lapply(names(DEG), function(x){
 ## DEG / MD plots
 invisible(lapply(names(DEG), function(x){
   tt = DEG[[x]]
-  p = ggplot(data = tt) +
-    geom_point(aes(x = logFC, y = -log10(PValue), color = gl), size = 5, alpha = .5) +
-    geom_vline(xintercept = c(-log2(thresholds[x,'FC']), log2(thresholds[x,'FC'])), alpha = .5,
-      color = 'grey50', linetype = 'dashed') +
-    geom_hline(yintercept = -log10(thresholds[x,'P']), alpha = .5, color = 'grey50',
-      linetype = 'dashed') +
-    scale_color_manual(name = 'Gene expression', values = c(brewer.pal(9,'Set1')[c(2,9,1)])) +
-    # scale_color_manual(name = 'Gene expression', values = c(brewer.pal(9,'Set1')[c(3,2,9,5,1)]),
-    #  drop = F) +
-    labs(subtitle = paste(x, paste0('(*n=', sum(tt$gl != 'NR'), ')')),
-      title = paste(paste0('FC>',thresholds[x,'FC']),paste0('& P<',100*thresholds[x,'P'],'%'),
-        'V plot'),
-      x = 'Log Fold-change',y = '-Log10(P)') +
-    theme(
-      plot.title = element_text(size = rel(2), lineheight = 2, vjust = 1, face = 'bold'),
-      plot.subtitle = element_text(size = rel(1.2), face = 'bold'),
-      legend.title = element_text(size = rel(1.5)),
-      legend.text = element_text(size = rel(1.5)),
-      axis.title = element_text(size = rel(1.5)),
-      axis.text = element_text(size = rel(1.5)),
-      panel.border = element_rect(colour = 'grey50', fill = NA)
-    )
-
-  # ggsave(file.path(rout, paste0(gsub(pattern = ' ',replacement = '_', x = x),'_volcano_plot.png')),
-  #   plot = p, width = 10, height = 8, device = 'png', dpi = 300)
 
   p = ggplot(data = tt) +
     geom_point(aes(x = logCPM, y = logFC, color = gl), size = 5, alpha = .5) +
