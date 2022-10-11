@@ -22,13 +22,13 @@ rout = wd
 LFC = log2(1.5)
 
 CT = list.dirs(sample_dir, full.names = F, recursive = F)
-nk = 8
 
 ## Load SamplePlan data descriptor
 SamplePlan = read.table(paste0(wd,"/SamplePlan.tsv"),sep = "\t", h = T, row.names = 1)
 SamplePlan$SampleType = factor(SamplePlan$SampleType)
 SamplePlan$CellType = factor(SamplePlan$CellType,levels = CT)
 SamplePlan$SamplePool = factor(SamplePlan$SamplePool)
+SamplePlan$CellTypeRed = factor(SamplePlan$CellTypeRed)
 
 ####################################################################################################
 ##                                                  ANNOTATION
@@ -88,8 +88,6 @@ for(dir in CT) {
   x = table_CTL[,grepl(paste0(dir,"cell"),colnames(table_CTL))]
   x$gene_expression = (x[,1] + x[,2])/2
   x$gene_ENS = rownames(x)
-  write.table(x,paste0(dir,"_CTL_gene_expression.tsv"),row.names = F, col.names = T, quote = F,
-    sep = "\t")
 
   ## Create file usable for GSEA
   xx = table[,grepl(paste0(dir,"cell"),colnames(table))]
