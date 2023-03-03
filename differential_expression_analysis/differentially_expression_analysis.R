@@ -116,10 +116,15 @@ DEG = sapply(colnames(cmp), function(contrast){
   qlf = glmTreat(glmfit = fit, contrast = cmp[, contrast], lfc = LFC)
   tt = with(topTags(object = qlf, n = NULL, sort.by = 'none'), table)
   tt$gl = 0
-  tt$gl[tt$PValue <= thresholds[contrast, 'P']  & tt$logFC < -FC] = 1
-  tt$gl[tt$PValue <= thresholds[contrast, 'P']  & tt$logFC > FC] = 2
-  tt$gl = factor(tt$gl, levels = c(1, 0, 2), labels = c('Down-regulated', 'Not regulated',
-    'Up-regulated'))
+  tt$gl[tt$PValue <= thresholds[contrast, 'P']  & tt$logFC < -FC] = -1
+  tt$gl[tt$PValue <= thresholds[contrast, 'P']  & tt$logFC > FC] = 1
+  tt$gl[tt$FDR <= thresholds[contrast, 'P']  & tt$logFC < -FC] = -2
+  tt$gl[tt$FDR <= thresholds[contrast, 'P']  & tt$logFC > FC] = 2
+
+  tt$gl = factor(tt$gl, levels = c(-2,-1, 0, 1, 2),
+    labels = c('Down-regulated (FDR < 5%)','Down-regulated (p-value < 5%)', 'Not regulated',
+    'Up-regulated (p-value < 5%)', 'Up-regulated (FDR < 5%)'))
+
   tt
 }, simplify = F)
 
@@ -138,7 +143,8 @@ invisible(lapply(names(DEG), function(x){
     geom_hline(yintercept = c(-log2(thresholds[x, 'FC']), log2(thresholds[x, 'FC'])), alpha = .5,
       color = 'grey50', linetype = 'dashed') +
     geom_hline(yintercept = 0, alpha = .5, color = '#FFFFFF') +
-    scale_color_manual(name = 'Gene expression', values = c(brewer.pal(9,'Set1')[c(2,9,1)])) +
+    scale_color_manual(name = 'Gene expression', values = values = c(brewer.pal(9,'Paired')[c(2,1)],
+      brewer.pal(9,'Set1')[c(9)],brewer.pal(9,'Paired')[c(5,6)])) +
     labs(subtitle = paste(x, paste0('(*n=', sum(tt$gl != 'NR'), ')')),
       title = paste(paste0('FC>',thresholds[x,'FC']),paste0('& P<',100*thresholds[x,'P'],'%'),
         'MD plot'),
